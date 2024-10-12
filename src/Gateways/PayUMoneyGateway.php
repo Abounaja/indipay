@@ -1,25 +1,32 @@
 <?php
+
 namespace Abounaja\Indipay\Gateways;
 
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
 class PayUMoneyGateway implements PaymentGatewayInterface
 {
+    protected $parameters = [];
 
-    protected $parameters = array();
     protected $testMode = false;
+
     protected $merchantKey = '';
+
     protected $salt = '';
+
     protected $hash = '';
+
     protected $liveEndPoint = 'https://secure.payu.in/_payment';
+
     protected $testEndPoint = 'https://test.payu.in/_payment';
+
     public $response = '';
 
-    function __construct()
+    public function __construct()
     {
         $this->merchantKey = Config::get('indipay.payumoney.merchantKey');
         $this->salt = Config::get('indipay.payumoney.salt');
@@ -55,16 +62,16 @@ class PayUMoneyGateway implements PaymentGatewayInterface
     {
 
         Log::info('Indipay Payment Request Initiated: ');
+
         return View::make('indipay::payumoney')->with('hash', $this->hash)
             ->with('parameters', $this->parameters)
             ->with('endPoint', $this->getEndPoint());
 
     }
 
-
     /**
      * Check Response
-     * @param $request
+     *
      * @return array
      */
     public function response($request)
@@ -80,9 +87,7 @@ class PayUMoneyGateway implements PaymentGatewayInterface
         return $response;
     }
 
-
     /**
-     * @param $parameters
      * @throws IndipayParametersMissingException
      */
     public function checkParameters($parameters)
@@ -107,12 +112,11 @@ class PayUMoneyGateway implements PaymentGatewayInterface
 
     /**
      * PayUMoney Encrypt Function
-     *
      */
     protected function encrypt()
     {
         $this->hash = '';
-        $hashSequence = "key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10";
+        $hashSequence = 'key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5|udf6|udf7|udf8|udf9|udf10';
         $hashVarsSeq = explode('|', $hashSequence);
         $hash_string = '';
 
@@ -128,16 +132,16 @@ class PayUMoneyGateway implements PaymentGatewayInterface
     /**
      * PayUMoney Decrypt Function
      *
-     * @param $plainText
-     * @param $key
+     * @param  $plainText
+     * @param  $key
      * @return string
      */
     protected function decrypt($response)
     {
 
-        $hashSequence = "status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key";
+        $hashSequence = 'status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key';
         $hashVarsSeq = explode('|', $hashSequence);
-        $hash_string = $this->salt . "|";
+        $hash_string = $this->salt.'|';
 
         foreach ($hashVarsSeq as $hash_var) {
             $hash_string .= isset($response[$hash_var]) ? $response[$hash_var] : '';
@@ -149,14 +153,8 @@ class PayUMoneyGateway implements PaymentGatewayInterface
         return strtolower(hash('sha512', $hash_string));
     }
 
-
-
     public function generateTransactionID()
     {
-        return substr(hash('sha256', mt_rand() . microtime()), 0, 20);
+        return substr(hash('sha256', mt_rand().microtime()), 0, 20);
     }
-
-
-
-
 }

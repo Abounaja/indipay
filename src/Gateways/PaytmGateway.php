@@ -1,27 +1,36 @@
 <?php
+
 namespace Abounaja\Indipay\Gateways;
 
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
 class PaytmGateway implements PaymentGatewayInterface
 {
+    protected $parameters = [];
 
-    protected $parameters = array();
     protected $merchantData = '';
+
     protected $checksum = '';
+
     protected $testMode = false;
+
     protected $MERCHANT_KEY = '';
+
     protected $liveEndPoint = 'https://securegw.paytm.in/order/process';
+
     protected $testEndPoint = 'https://securegw-stage.paytm.in/order/process';
+
     protected $statusLiveEndPoint = 'https://securegw.paytm.in/order/status';
+
     protected $statusTestEndPoint = 'https://securegw-stage.paytm.in/order/status';
+
     public $response = '';
 
-    function __construct()
+    public function __construct()
     {
         $this->MERCHANT_KEY = Config::get('indipay.paytm.MERCHANT_KEY');
         $this->testMode = Config::get('indipay.testMode');
@@ -63,52 +72,54 @@ class PaytmGateway implements PaymentGatewayInterface
     {
 
         Log::info('Indipay Payment Request Initiated: ');
+
         return View::make('indipay::paytm')->with('params', $this->parameters)
             ->with('checksum', $this->checksum)
             ->with('endPoint', $this->getEndPoint());
 
     }
 
-
     /**
      * Check Response
-     * @param $request
+     *
      * @return array
      */
     public function response($request)
     {
         $params = $request->all();
-        $checksum = isset($request->CHECKSUMHASH) ? $request->CHECKSUMHASH : "";
+        $checksum = isset($request->CHECKSUMHASH) ? $request->CHECKSUMHASH : '';
 
         $isValidChecksum = $this->verifychecksum_e($params, $this->MERCHANT_KEY, $checksum);
 
-        if ($isValidChecksum == "TRUE" && $request->STATUS == "TXN_SUCCESS") {
-            $params['status'] = "success";
+        if ($isValidChecksum == 'TRUE' && $request->STATUS == 'TXN_SUCCESS') {
+            $params['status'] = 'success';
+
             return $params;
         }
-        $params['status'] = "failure";
+        $params['status'] = 'failure';
+
         return $params;
     }
 
     public function verify($parameters)
     {
-        if (!isset($parameters['ORDERID'])) {
+        if (! isset($parameters['ORDERID'])) {
             return false;
         }
-        $requestParamList = array("MID" => $this->parameters['MID'], "ORDERID" => $parameters['ORDERID']);
+        $requestParamList = ['MID' => $this->parameters['MID'], 'ORDERID' => $parameters['ORDERID']];
         $requestParamList['CHECKSUMHASH'] = $this->getChecksumFromArray($requestParamList, $this->MERCHANT_KEY);
         $responseParamList = (array) $this->getTxnStatusNew($requestParamList);
-        if ($responseParamList['STATUS'] == "TXN_SUCCESS") {
-            $responseParamList['status'] = "success";
+        if ($responseParamList['STATUS'] == 'TXN_SUCCESS') {
+            $responseParamList['status'] = 'success';
+
             return $responseParamList;
         }
-        $responseParamList['status'] = "failure";
+        $responseParamList['status'] = 'failure';
+
         return $responseParamList;
     }
 
-
     /**
-     * @param $parameters
      * @throws IndipayParametersMissingException
      */
     public function checkParameters($parameters)
@@ -131,37 +142,35 @@ class PaytmGateway implements PaymentGatewayInterface
 
     }
 
-
-
     /**
      * Paytm Gateway Functions
      */
-
-
-    function encrypt_e($input, $ky)
+    public function encrypt_e($input, $ky)
     {
         $key = html_entity_decode($ky);
-        $iv = "@@@@&&&&####$$$$";
-        $data = openssl_encrypt($input, "AES-128-CBC", $key, 0, $iv);
+        $iv = '@@@@&&&&####$$$$';
+        $data = openssl_encrypt($input, 'AES-128-CBC', $key, 0, $iv);
+
         return $data;
     }
 
-    function decrypt_e($crypt, $ky)
+    public function decrypt_e($crypt, $ky)
     {
         $key = html_entity_decode($ky);
-        $iv = "@@@@&&&&####$$$$";
-        $data = openssl_decrypt($crypt, "AES-128-CBC", $key, 0, $iv);
+        $iv = '@@@@&&&&####$$$$';
+        $data = openssl_decrypt($crypt, 'AES-128-CBC', $key, 0, $iv);
+
         return $data;
     }
 
-    function generateSalt_e($length)
+    public function generateSalt_e($length)
     {
-        $random = "";
-        srand((double) microtime() * 1000000);
+        $random = '';
+        srand((float) microtime() * 1000000);
 
-        $data = "AbcDE123IJKLMN67QRSTUVWXYZ";
-        $data .= "aBCdefghijklmn123opq45rs67tuv89wxyz";
-        $data .= "0FGH45OP89";
+        $data = 'AbcDE123IJKLMN67QRSTUVWXYZ';
+        $data .= 'aBCdefghijklmn123opq45rs67tuv89wxyz';
+        $data .= '0FGH45OP89';
 
         for ($i = 0; $i < $length; $i++) {
             $random .= substr($data, (rand() % (strlen($data))), 1);
@@ -170,38 +179,43 @@ class PaytmGateway implements PaymentGatewayInterface
         return $random;
     }
 
-    function checkString_e($value)
+    public function checkString_e($value)
     {
-        if ($value == 'null')
+        if ($value == 'null') {
             $value = '';
+        }
+
         return $value;
     }
 
-    function getChecksumFromArray($arrayList, $key, $sort = 1)
+    public function getChecksumFromArray($arrayList, $key, $sort = 1)
     {
         if ($sort != 0) {
             ksort($arrayList);
         }
         $str = $this->getArray2Str($arrayList);
         $salt = $this->generateSalt_e(4);
-        $finalString = $str . "|" . $salt;
-        $hash = hash("sha256", $finalString);
-        $hashString = $hash . $salt;
+        $finalString = $str.'|'.$salt;
+        $hash = hash('sha256', $finalString);
+        $hashString = $hash.$salt;
         $checksum = $this->encrypt_e($hashString, $key);
+
         return $checksum;
     }
-    function getChecksumFromString($str, $key)
+
+    public function getChecksumFromString($str, $key)
     {
 
         $salt = $this->generateSalt_e(4);
-        $finalString = $str . "|" . $salt;
-        $hash = hash("sha256", $finalString);
-        $hashString = $hash . $salt;
+        $finalString = $str.'|'.$salt;
+        $hash = hash('sha256', $finalString);
+        $hashString = $hash.$salt;
         $checksum = $this->encrypt_e($hashString, $key);
+
         return $checksum;
     }
 
-    function verifychecksum_e($arrayList, $key, $checksumvalue)
+    public function verifychecksum_e($arrayList, $key, $checksumvalue)
     {
         $arrayList = $this->removeCheckSumParam($arrayList);
         ksort($arrayList);
@@ -209,44 +223,46 @@ class PaytmGateway implements PaymentGatewayInterface
         $paytm_hash = $this->decrypt_e($checksumvalue, $key);
         $salt = substr($paytm_hash, -4);
 
-        $finalString = $str . "|" . $salt;
+        $finalString = $str.'|'.$salt;
 
-        $website_hash = hash("sha256", $finalString);
+        $website_hash = hash('sha256', $finalString);
         $website_hash .= $salt;
 
-        $validFlag = "FALSE";
+        $validFlag = 'FALSE';
         if ($website_hash == $paytm_hash) {
-            $validFlag = "TRUE";
+            $validFlag = 'TRUE';
         } else {
-            $validFlag = "FALSE";
+            $validFlag = 'FALSE';
         }
+
         return $validFlag;
     }
 
-    function verifychecksum_eFromStr($str, $key, $checksumvalue)
+    public function verifychecksum_eFromStr($str, $key, $checksumvalue)
     {
         $paytm_hash = $this->decrypt_e($checksumvalue, $key);
         $salt = substr($paytm_hash, -4);
 
-        $finalString = $str . "|" . $salt;
+        $finalString = $str.'|'.$salt;
 
-        $website_hash = hash("sha256", $finalString);
+        $website_hash = hash('sha256', $finalString);
         $website_hash .= $salt;
 
-        $validFlag = "FALSE";
+        $validFlag = 'FALSE';
         if ($website_hash == $paytm_hash) {
-            $validFlag = "TRUE";
+            $validFlag = 'TRUE';
         } else {
-            $validFlag = "FALSE";
+            $validFlag = 'FALSE';
         }
+
         return $validFlag;
     }
 
-    function getArray2Str($arrayList)
+    public function getArray2Str($arrayList)
     {
         $findme = 'REFUND';
         $findmepipe = '|';
-        $paramStr = "";
+        $paramStr = '';
         $flag = 1;
         foreach ($arrayList as $key => $value) {
             $pos = strpos($value, $findme);
@@ -259,66 +275,69 @@ class PaytmGateway implements PaymentGatewayInterface
                 $paramStr .= $this->checkString_e($value);
                 $flag = 0;
             } else {
-                $paramStr .= "|" . $this->checkString_e($value);
+                $paramStr .= '|'.$this->checkString_e($value);
             }
         }
+
         return $paramStr;
     }
 
-    function getArray2StrForVerify($arrayList)
+    public function getArray2StrForVerify($arrayList)
     {
-        $paramStr = "";
+        $paramStr = '';
         $flag = 1;
         foreach ($arrayList as $key => $value) {
             if ($flag) {
                 $paramStr .= $this->checkString_e($value);
                 $flag = 0;
             } else {
-                $paramStr .= "|" . $this->checkString_e($value);
+                $paramStr .= '|'.$this->checkString_e($value);
             }
         }
+
         return $paramStr;
     }
 
-    function redirect2PG($paramList, $key)
+    public function redirect2PG($paramList, $key)
     {
         $hashString = $this->getchecksumFromArray($paramList, $key);
         $checksum = $this->encrypt_e($hashString, $key);
     }
 
-    function removeCheckSumParam($arrayList)
+    public function removeCheckSumParam($arrayList)
     {
-        if (isset($arrayList["CHECKSUMHASH"])) {
-            unset($arrayList["CHECKSUMHASH"]);
+        if (isset($arrayList['CHECKSUMHASH'])) {
+            unset($arrayList['CHECKSUMHASH']);
         }
+
         return $arrayList;
     }
 
-    function getTxnStatus($requestParamList)
+    public function getTxnStatus($requestParamList)
     {
         return $this->callAPI($this->getStatusEndPoint(), $requestParamList);
     }
 
-    function getTxnStatusNew($requestParamList)
+    public function getTxnStatusNew($requestParamList)
     {
         return $this->callNewAPI($this->getStatusEndPoint(), $requestParamList);
     }
 
-    function initiateTxnRefund($requestParamList)
+    public function initiateTxnRefund($requestParamList)
     {
         //$CHECKSUM = $this->getRefundChecksumFromArray($requestParamList,PAYTM_MERCHANT_KEY,0);
         //$requestParamList["CHECKSUM"] = $CHECKSUM;
         //return $this->callAPI(PAYTM_REFUND_URL, $requestParamList);
     }
 
-    function callAPI($apiURL, $requestParamList)
+    public function callAPI($apiURL, $requestParamList)
     {
-        $jsonResponse = "";
-        $responseParamList = array();
+        $jsonResponse = '';
+        $responseParamList = [];
         $JsonData = json_encode($requestParamList);
-        $postData = 'JsonData=' . urlencode($JsonData);
+        $postData = 'JsonData='.urlencode($JsonData);
         $ch = curl_init($apiURL);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
@@ -326,24 +345,25 @@ class PaytmGateway implements PaymentGatewayInterface
         curl_setopt(
             $ch,
             CURLOPT_HTTPHEADER,
-            array(
+            [
                 'Content-Type: application/json',
-                'Content-Length: ' . strlen($postData)
-            )
+                'Content-Length: '.strlen($postData),
+            ]
         );
         $jsonResponse = curl_exec($ch);
         $responseParamList = json_decode($jsonResponse, true);
+
         return $responseParamList;
     }
 
-    function callNewAPI($apiURL, $requestParamList)
+    public function callNewAPI($apiURL, $requestParamList)
     {
-        $jsonResponse = "";
-        $responseParamList = array();
+        $jsonResponse = '';
+        $responseParamList = [];
         $JsonData = json_encode($requestParamList);
-        $postData = 'JsonData=' . urlencode($JsonData);
+        $postData = 'JsonData='.urlencode($JsonData);
         $ch = curl_init($apiURL);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
@@ -351,32 +371,36 @@ class PaytmGateway implements PaymentGatewayInterface
         curl_setopt(
             $ch,
             CURLOPT_HTTPHEADER,
-            array(
+            [
                 'Content-Type: application/json',
-                'Content-Length: ' . strlen($postData)
-            )
+                'Content-Length: '.strlen($postData),
+            ]
         );
         $jsonResponse = curl_exec($ch);
         $responseParamList = json_decode($jsonResponse, true);
+
         return $responseParamList;
     }
-    function getRefundChecksumFromArray($arrayList, $key, $sort = 1)
+
+    public function getRefundChecksumFromArray($arrayList, $key, $sort = 1)
     {
         if ($sort != 0) {
             ksort($arrayList);
         }
         $str = $this->getRefundArray2Str($arrayList);
         $salt = $this->generateSalt_e(4);
-        $finalString = $str . "|" . $salt;
-        $hash = hash("sha256", $finalString);
-        $hashString = $hash . $salt;
+        $finalString = $str.'|'.$salt;
+        $hash = hash('sha256', $finalString);
+        $hashString = $hash.$salt;
         $checksum = $this->encrypt_e($hashString, $key);
+
         return $checksum;
     }
-    function getRefundArray2Str($arrayList)
+
+    public function getRefundArray2Str($arrayList)
     {
         $findmepipe = '|';
-        $paramStr = "";
+        $paramStr = '';
         $flag = 1;
         foreach ($arrayList as $key => $value) {
             $pospipe = strpos($value, $findmepipe);
@@ -388,17 +412,19 @@ class PaytmGateway implements PaymentGatewayInterface
                 $paramStr .= $this->checkString_e($value);
                 $flag = 0;
             } else {
-                $paramStr .= "|" . $this->checkString_e($value);
+                $paramStr .= '|'.$this->checkString_e($value);
             }
         }
+
         return $paramStr;
     }
-    function callRefundAPI($refundApiURL, $requestParamList)
+
+    public function callRefundAPI($refundApiURL, $requestParamList)
     {
-        $jsonResponse = "";
-        $responseParamList = array();
+        $jsonResponse = '';
+        $responseParamList = [];
         $JsonData = json_encode($requestParamList);
-        $postData = 'JsonData=' . urlencode($JsonData);
+        $postData = 'JsonData='.urlencode($JsonData);
         $ch = curl_init($refundApiURL);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
@@ -406,15 +432,12 @@ class PaytmGateway implements PaymentGatewayInterface
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $headers = array();
+        $headers = [];
         $headers[] = 'Content-Type: application/json';
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $jsonResponse = curl_exec($ch);
         $responseParamList = json_decode($jsonResponse, true);
+
         return $responseParamList;
     }
-
-
-
-
 }

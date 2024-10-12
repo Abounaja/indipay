@@ -1,27 +1,35 @@
 <?php
+
 namespace Abounaja\Indipay\Gateways;
 
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
 class InstaMojoGateway implements PaymentGatewayInterface
 {
+    protected $parameters = [];
 
-    protected $parameters = array();
     protected $merchantData = '';
+
     protected $encRequest = '';
+
     protected $testMode = false;
+
     protected $api_key = '';
+
     protected $auth_token = '';
+
     protected $liveEndPoint = 'https://www.instamojo.com/api/1.1/';
+
     protected $testEndPoint = 'https://test.instamojo.com/api/1.1/';
+
     public $response = '';
 
-    function __construct()
+    public function __construct()
     {
         $this->testMode = Config::get('indipay.testMode');
         $this->api_key = Config::get('indipay.instamojo.api_key');
@@ -33,7 +41,8 @@ class InstaMojoGateway implements PaymentGatewayInterface
     public function getEndPoint($param = '')
     {
         $endpoint = $this->testMode ? $this->testEndPoint : $this->liveEndPoint;
-        return $endpoint . $param;
+
+        return $endpoint.$param;
     }
 
     public function request($parameters)
@@ -42,14 +51,14 @@ class InstaMojoGateway implements PaymentGatewayInterface
 
         $this->checkParameters($this->parameters);
 
-        $client = new \GuzzleHttp\Client();
+        $client = new \GuzzleHttp\Client;
         $response = $client->post(
             $this->getEndPoint('payment-requests/'),
             [
-                'headers' => array(
+                'headers' => [
                     'X-Api-Key' => $this->api_key,
                     'X-Auth-Token' => $this->auth_token,
-                ),
+                ],
                 'form_params' => $this->parameters,
             ]
         )->getBody()->getContents();
@@ -70,15 +79,15 @@ class InstaMojoGateway implements PaymentGatewayInterface
     {
 
         Log::info('Indipay Payment Request Initiated: ');
+
         //dd($this->response->payment_request->longurl);
         return View::make('indipay::instamojo')->with('longurl', $this->response->payment_request->longurl);
 
     }
 
-
     /**
      * Check Response
-     * @param $request
+     *
      * @return array
      */
     public function response($request)
@@ -86,14 +95,14 @@ class InstaMojoGateway implements PaymentGatewayInterface
         $payment_request_id = Request::input('payment_request_id');
         $payment_id = Request::input('payment_id');
 
-        $client = new \GuzzleHttp\Client();
+        $client = new \GuzzleHttp\Client;
         $response = $client->get(
-            $this->getEndPoint('payment-requests/' . $payment_request_id . '/' . $payment_id . '/'),
+            $this->getEndPoint('payment-requests/'.$payment_request_id.'/'.$payment_id.'/'),
             [
-                'headers' => array(
+                'headers' => [
                     'X-Api-Key' => $this->api_key,
                     'X-Auth-Token' => $this->auth_token,
-                ),
+                ],
             ]
         )->getBody()->getContents();
         $response = json_decode($response);
@@ -106,9 +115,7 @@ class InstaMojoGateway implements PaymentGatewayInterface
 
     }
 
-
     /**
-     * @param $parameters
      * @throws IndipayParametersMissingException
      */
     public function checkParameters($parameters)
@@ -126,8 +133,4 @@ class InstaMojoGateway implements PaymentGatewayInterface
         }
 
     }
-
-
-
-
 }

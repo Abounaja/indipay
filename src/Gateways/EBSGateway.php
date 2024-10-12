@@ -1,24 +1,30 @@
 <?php
+
 namespace Abounaja\Indipay\Gateways;
 
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
 class EBSGateway implements PaymentGatewayInterface
 {
+    protected $parameters = [];
 
-    protected $parameters = array();
     protected $testMode = false;
+
     protected $merchantKey = '';
+
     protected $salt = '';
+
     protected $hash = '';
+
     protected $endPoint = 'https://secure.ebs.in/pg/ma/payment/request';
+
     public $response = '';
 
-    function __construct()
+    public function __construct()
     {
         $this->secretKey = Config::get('indipay.ebs.secretKey');
         $this->testMode = Config::get('indipay.testMode');
@@ -32,7 +38,6 @@ class EBSGateway implements PaymentGatewayInterface
             $this->parameters['mode'] = 'TEST';
         }
         $this->parameters['return_url'] = url(Config::get('indipay.ebs.return_url'));
-
 
     }
 
@@ -60,16 +65,16 @@ class EBSGateway implements PaymentGatewayInterface
     {
 
         Log::info('Indipay Payment Request Initiated: ');
+
         return View::make('indipay::ebs')->with('hash', $this->hash)
             ->with('parameters', $this->parameters)
             ->with('endPoint', $this->getEndPoint());
 
     }
 
-
     /**
      * Check Response
-     * @param $request
+     *
      * @return array
      */
     public function response($request)
@@ -79,9 +84,7 @@ class EBSGateway implements PaymentGatewayInterface
         return $response;
     }
 
-
     /**
-     * @param $parameters
      * @throws IndipayParametersMissingException
      */
     public function checkParameters($parameters)
@@ -112,20 +115,19 @@ class EBSGateway implements PaymentGatewayInterface
 
     /**
      * EBS Encrypt Function
-     *
      */
     protected function encrypt()
     {
         $this->hash = '';
-        $hash_string = $this->secretKey . "|" . urlencode($this->parameters['account_id']) . "|" . urlencode($this->parameters['amount']) . "|" . urlencode($this->parameters['reference_no']) . "|" . $this->parameters['return_url'] . "|" . urlencode($this->parameters['mode']);
+        $hash_string = $this->secretKey.'|'.urlencode($this->parameters['account_id']).'|'.urlencode($this->parameters['amount']).'|'.urlencode($this->parameters['reference_no']).'|'.$this->parameters['return_url'].'|'.urlencode($this->parameters['mode']);
         $this->hash = md5($hash_string);
     }
 
     /**
      * EBS Decrypt Function
      *
-     * @param $plainText
-     * @param $key
+     * @param  $plainText
+     * @param  $key
      * @return string
      */
     protected function decrypt($response)
@@ -134,14 +136,8 @@ class EBSGateway implements PaymentGatewayInterface
         return $response;
     }
 
-
-
     public function generateTransactionID()
     {
-        return substr(hash('sha256', mt_rand() . microtime()), 0, 20);
+        return substr(hash('sha256', mt_rand().microtime()), 0, 20);
     }
-
-
-
-
 }
