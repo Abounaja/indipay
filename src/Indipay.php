@@ -1,15 +1,17 @@
-<?php namespace Softon\Indipay;
+<?php
+namespace Abounaja\Indipay;
 
-use Softon\Indipay\Gateways\CCAvenueGateway;
-use Softon\Indipay\Gateways\CitrusGateway;
-use Softon\Indipay\Gateways\EBSGateway;
-use Softon\Indipay\Gateways\InstaMojoGateway;
-use Softon\Indipay\Gateways\PaymentGatewayInterface;
-use Softon\Indipay\Gateways\PayUMoneyGateway;
-use Softon\Indipay\Gateways\MockerGateway;
-use Softon\Indipay\Gateways\ZapakPayGateway;
+use Abounaja\Indipay\Gateways\CCAvenueGateway;
+use Abounaja\Indipay\Gateways\CitrusGateway;
+use Abounaja\Indipay\Gateways\EBSGateway;
+use Abounaja\Indipay\Gateways\InstaMojoGateway;
+use Abounaja\Indipay\Gateways\PaymentGatewayInterface;
+use Abounaja\Indipay\Gateways\PayUMoneyGateway;
+use Abounaja\Indipay\Gateways\MockerGateway;
+use Abounaja\Indipay\Gateways\ZapakPayGateway;
 
-class Indipay {
+class Indipay
+{
 
     protected $gateway;
 
@@ -51,8 +53,7 @@ class Indipay {
     public function gateway($name)
     {
         $name = strtolower($name);
-        switch($name)
-        {
+        switch ($name) {
             case 'ccavenue':
                 $this->gateway = new CCAvenueGateway();
                 break;

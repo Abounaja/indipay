@@ -1,12 +1,14 @@
-<?php namespace Softon\Indipay\Gateways;
+<?php
+namespace Abounaja\Indipay\Gateways;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Softon\Indipay\Exceptions\IndipayParametersMissingException;
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
-class CitrusGateway implements PaymentGatewayInterface {
+class CitrusGateway implements PaymentGatewayInterface
+{
 
     protected $parameters = array();
     protected $testMode = false;
@@ -30,12 +32,12 @@ class CitrusGateway implements PaymentGatewayInterface {
 
     public function getEndPoint()
     {
-        return $this->testMode?$this->testEndPoint.$this->vanityUrl:$this->liveEndPoint.$this->vanityUrl;
+        return $this->testMode ? $this->testEndPoint . $this->vanityUrl : $this->liveEndPoint . $this->vanityUrl;
     }
 
     public function request($parameters)
     {
-        $this->parameters = array_merge($this->parameters,$parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
 
         $this->checkParameters($this->parameters);
 
@@ -51,9 +53,9 @@ class CitrusGateway implements PaymentGatewayInterface {
     public function send()
     {
         Log::info('Indipay Payment Request Initiated: ');
-        return View::make('indipay::citrus')->with('hash',$this->hash)
-                             ->with('parameters',$this->parameters)
-                             ->with('endPoint',$this->getEndPoint());
+        return View::make('indipay::citrus')->with('hash', $this->hash)
+            ->with('parameters', $this->parameters)
+            ->with('endPoint', $this->getEndPoint());
 
     }
 
@@ -69,7 +71,7 @@ class CitrusGateway implements PaymentGatewayInterface {
 
         $response_hash = $this->decrypt($response);
 
-        if($response_hash!=$response['signature']){
+        if ($response_hash != $response['signature']) {
             return 'Hash Mismatch Error';
         }
 
@@ -103,7 +105,7 @@ class CitrusGateway implements PaymentGatewayInterface {
     protected function encrypt()
     {
 
-        $hash_string = $this->vanityUrl.$this->parameters['orderAmount'].$this->parameters['merchantTxnId'].$this->parameters['currency'];
+        $hash_string = $this->vanityUrl . $this->parameters['orderAmount'] . $this->parameters['merchantTxnId'] . $this->parameters['currency'];
 
         $this->hash = hash_hmac('sha1', $hash_string, $this->secretKey);
 

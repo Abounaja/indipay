@@ -1,12 +1,14 @@
-<?php namespace Softon\Indipay\Gateways;
+<?php
+namespace Abounaja\Indipay\Gateways;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Softon\Indipay\Exceptions\IndipayParametersMissingException;
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
-class PayUMoneyGateway implements PaymentGatewayInterface {
+class PayUMoneyGateway implements PaymentGatewayInterface
+{
 
     protected $parameters = array();
     protected $testMode = false;
@@ -31,12 +33,12 @@ class PayUMoneyGateway implements PaymentGatewayInterface {
 
     public function getEndPoint()
     {
-        return $this->testMode?$this->testEndPoint:$this->liveEndPoint;
+        return $this->testMode ? $this->testEndPoint : $this->liveEndPoint;
     }
 
     public function request($parameters)
     {
-        $this->parameters = array_merge($this->parameters,$parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
 
         $this->checkParameters($this->parameters);
 
@@ -53,9 +55,9 @@ class PayUMoneyGateway implements PaymentGatewayInterface {
     {
 
         Log::info('Indipay Payment Request Initiated: ');
-        return View::make('indipay::payumoney')->with('hash',$this->hash)
-                             ->with('parameters',$this->parameters)
-                             ->with('endPoint',$this->getEndPoint());
+        return View::make('indipay::payumoney')->with('hash', $this->hash)
+            ->with('parameters', $this->parameters)
+            ->with('endPoint', $this->getEndPoint());
 
     }
 
@@ -71,7 +73,7 @@ class PayUMoneyGateway implements PaymentGatewayInterface {
 
         $response_hash = $this->decrypt($response);
 
-        if($response_hash!=$response['hash']){
+        if ($response_hash != $response['hash']) {
             return 'Hash Mismatch Error';
         }
 
@@ -114,7 +116,7 @@ class PayUMoneyGateway implements PaymentGatewayInterface {
         $hashVarsSeq = explode('|', $hashSequence);
         $hash_string = '';
 
-        foreach($hashVarsSeq as $hash_var) {
+        foreach ($hashVarsSeq as $hash_var) {
             $hash_string .= isset($this->parameters[$hash_var]) ? $this->parameters[$hash_var] : '';
             $hash_string .= '|';
         }
@@ -135,14 +137,14 @@ class PayUMoneyGateway implements PaymentGatewayInterface {
 
         $hashSequence = "status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key";
         $hashVarsSeq = explode('|', $hashSequence);
-        $hash_string = $this->salt."|";
+        $hash_string = $this->salt . "|";
 
-        foreach($hashVarsSeq as $hash_var) {
+        foreach ($hashVarsSeq as $hash_var) {
             $hash_string .= isset($response[$hash_var]) ? $response[$hash_var] : '';
             $hash_string .= '|';
         }
 
-        $hash_string = trim($hash_string,'|');
+        $hash_string = trim($hash_string, '|');
 
         return strtolower(hash('sha512', $hash_string));
     }

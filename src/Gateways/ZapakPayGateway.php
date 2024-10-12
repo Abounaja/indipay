@@ -1,12 +1,14 @@
-<?php namespace Softon\Indipay\Gateways;
+<?php
+namespace Abounaja\Indipay\Gateways;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Softon\Indipay\Exceptions\IndipayParametersMissingException;
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
-class ZapakPayGateway implements PaymentGatewayInterface {
+class ZapakPayGateway implements PaymentGatewayInterface
+{
 
     protected $parameters = array();
     protected $testMode = false;
@@ -24,22 +26,22 @@ class ZapakPayGateway implements PaymentGatewayInterface {
         $this->testMode = Config::get('indipay.testMode');
         $this->parameters['merchantIdentifier'] = $this->merchantIdentifier;
         $this->parameters['returnUrl'] = url(Config::get('indipay.zapakpay.returnUrl'));
-        
+
     }
 
     public function getEndPoint()
     {
-        return $this->testMode?$this->testEndPoint:$this->liveEndPoint;
+        return $this->testMode ? $this->testEndPoint : $this->liveEndPoint;
     }
 
     public function request($parameters)
     {
-        $this->parameters = array_merge($this->parameters,$parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
 
         $this->checkParameters($this->parameters);
 
         $encodeString = $this->getAllParams($this->parameters);
-        $this->checksum = $this->calculateChecksum($this->secret,$encodeString);
+        $this->checksum = $this->calculateChecksum($this->secret, $encodeString);
 
         return $this;
 
@@ -52,9 +54,9 @@ class ZapakPayGateway implements PaymentGatewayInterface {
     {
 
         Log::info('Indipay Payment Request Initiated: ');
-        return View::make('indipay::zapakpay')->with('params',$this->parameters)
-                             ->with('checksum',$this->checksum)
-                             ->with('endPoint',$this->getEndPoint());
+        return View::make('indipay::zapakpay')->with('params', $this->parameters)
+            ->with('checksum', $this->checksum)
+            ->with('endPoint', $this->getEndPoint());
 
     }
 
@@ -70,9 +72,9 @@ class ZapakPayGateway implements PaymentGatewayInterface {
         $rcvd_checksum = $request->checksum;
 
         $rcvd_data = $this->getAllResponseParams($response);
-        $checksum_check = $this->verifyChecksum($rcvd_checksum,$rcvd_data,$this->secret);
+        $checksum_check = $this->verifyChecksum($rcvd_checksum, $rcvd_data, $this->secret);
 
-        if(!$checksum_check){
+        if (!$checksum_check) {
             return "Recieved Checksum Mismatch.";
         }
 
@@ -105,70 +107,100 @@ class ZapakPayGateway implements PaymentGatewayInterface {
 
     public function calculateChecksum($secret_key, $all)
     {
-        $hash = hash_hmac('sha256', $all , $secret_key);
+        $hash = hash_hmac('sha256', $all, $secret_key);
         $checksum = $hash;
         return $checksum;
     }
 
 
-    public function getAllParams($params) {
+    public function getAllParams($params)
+    {
         //ksort($_POST);
         $all = '';
-        
-        
-        $checksumsequence= array("amount","bankid","buyerAddress",
-                "buyerCity","buyerCountry","buyerEmail","buyerFirstName","buyerLastName","buyerPhoneNumber","buyerPincode",
-                "buyerState","currency","debitorcredit","merchantIdentifier","merchantIpAddress","mode","orderId",
-                "product1Description","product2Description","product3Description","product4Description",
-                "productDescription","productInfo","purpose","returnUrl","shipToAddress","shipToCity","shipToCountry",
-                "shipToFirstname","shipToLastname","shipToPhoneNumber","shipToPincode","shipToState","showMobile","txnDate",
-                "txnType","zpPayOption");
-        
-        
-        foreach($checksumsequence as $seqvalue) {
-            if(array_key_exists($seqvalue, $params)) {
-                if(!$params[$seqvalue]=="")
-                {
-                    if($seqvalue != 'checksum') 
-                    {
-                            $all .= $seqvalue;
-                            $all .="=";
-                            if ($seqvalue == 'returnUrl') 
-                            {
-                                $params[$seqvalue] = $this->sanitizedURL($params[$seqvalue]);
-                                $all .= $this->sanitizedURL($params[$seqvalue]);
-                        } 
-                            else 
-                            {
-                                $params[$seqvalue] = $this->sanitizedParam($params[$seqvalue]);
-                                $all .= $this->sanitizedParam($params[$seqvalue]);
-                            }
-                        $all .= "&";
+
+
+        $checksumsequence = array(
+            "amount",
+            "bankid",
+            "buyerAddress",
+            "buyerCity",
+            "buyerCountry",
+            "buyerEmail",
+            "buyerFirstName",
+            "buyerLastName",
+            "buyerPhoneNumber",
+            "buyerPincode",
+            "buyerState",
+            "currency",
+            "debitorcredit",
+            "merchantIdentifier",
+            "merchantIpAddress",
+            "mode",
+            "orderId",
+            "product1Description",
+            "product2Description",
+            "product3Description",
+            "product4Description",
+            "productDescription",
+            "productInfo",
+            "purpose",
+            "returnUrl",
+            "shipToAddress",
+            "shipToCity",
+            "shipToCountry",
+            "shipToFirstname",
+            "shipToLastname",
+            "shipToPhoneNumber",
+            "shipToPincode",
+            "shipToState",
+            "showMobile",
+            "txnDate",
+            "txnType",
+            "zpPayOption"
+        );
+
+
+        foreach ($checksumsequence as $seqvalue) {
+            if (array_key_exists($seqvalue, $params)) {
+                if (!$params[$seqvalue] == "") {
+                    if ($seqvalue != 'checksum') {
+                        $all .= $seqvalue;
+                        $all .= "=";
+                        if ($seqvalue == 'returnUrl') {
+                            $params[$seqvalue] = $this->sanitizedURL($params[$seqvalue]);
+                            $all .= $this->sanitizedURL($params[$seqvalue]);
+                        } else {
+                            $params[$seqvalue] = $this->sanitizedParam($params[$seqvalue]);
+                            $all .= $this->sanitizedParam($params[$seqvalue]);
                         }
+                        $all .= "&";
+                    }
                 }
-                
+
             }
         }
-        
-        
-        
+
+
+
         return $all;
     }
 
 
 
-    
-    public function verifyChecksum($checksum, $all, $secret) {
+
+    public function verifyChecksum($checksum, $all, $secret)
+    {
         $cal_checksum = $this->calculateChecksum($secret, $all);
         $bool = 0;
-        if($checksum == $cal_checksum)  {
+        if ($checksum == $cal_checksum) {
             $bool = 1;
         }
-        
+
         return $bool;
     }
-    
-    public function sanitizedParam($param) {
+
+    public function sanitizedParam($param)
+    {
         $pattern[0] = "%,%";
         $pattern[1] = "%#%";
         $pattern[2] = "%\(%";
@@ -198,8 +230,9 @@ class ZapakPayGateway implements PaymentGatewayInterface {
         $sanitizedParam = preg_replace($pattern, "", $param);
         return $sanitizedParam;
     }
-    
-    public function sanitizedURL($param) {
+
+    public function sanitizedURL($param)
+    {
         $pattern[0] = "%,%";
         $pattern[1] = "%\(%";
         $pattern[2] = "%\)%";
@@ -225,35 +258,47 @@ class ZapakPayGateway implements PaymentGatewayInterface {
         $sanitizedParam = preg_replace($pattern, "", $param);
         return $sanitizedParam;
     }
-    
 
-    public function getAllResponseParams($response) {
+
+    public function getAllResponseParams($response)
+    {
 
         $all = '';
-        $checksumsequence= array("amount","bank","bankid",
-                "cardId","cardScheme","cardToken","cardhashid","doRedirect",
-                "orderId","paymentMethod","paymentMode","responseCode",
-                "responseDescription");
-        foreach($checksumsequence as $seqvalue) {
-            if(array_key_exists($seqvalue, $response)) {
-                
+        $checksumsequence = array(
+            "amount",
+            "bank",
+            "bankid",
+            "cardId",
+            "cardScheme",
+            "cardToken",
+            "cardhashid",
+            "doRedirect",
+            "orderId",
+            "paymentMethod",
+            "paymentMode",
+            "responseCode",
+            "responseDescription"
+        );
+        foreach ($checksumsequence as $seqvalue) {
+            if (array_key_exists($seqvalue, $response)) {
+
                 $all .= $seqvalue;
-                $all .="=";
+                $all .= "=";
                 if ($seqvalue == 'returnUrl') {
                     $all .= $response[$seqvalue];
                 } else {
                     $all .= $response[$seqvalue];
                 }
                 $all .= "&";
-                
+
             }
         }
-        
-        
+
+
         return $all;
     }
 
-    
+
 
 
 

@@ -1,16 +1,18 @@
-<?php namespace Softon\Indipay\Gateways;
+<?php
+namespace Abounaja\Indipay\Gateways;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Softon\Indipay\Exceptions\IndipayParametersMissingException;
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
-class MockerGateway implements PaymentGatewayInterface {
+class MockerGateway implements PaymentGatewayInterface
+{
 
     protected $parameters = array();
     protected $service = 'default';
-    
+
     protected $liveEndPoint = 'https://mocker.in/payment/';
     protected $testEndPoint = 'https://mocker.in/payment/';
     protected $statusEndPoint = 'https://mocker.in/payment/status';
@@ -25,12 +27,12 @@ class MockerGateway implements PaymentGatewayInterface {
 
     public function getEndPoint()
     {
-        return $this->testMode?$this->testEndPoint.$this->service:$this->liveEndPoint.$this->service;
+        return $this->testMode ? $this->testEndPoint . $this->service : $this->liveEndPoint . $this->service;
     }
 
     public function request($parameters)
     {
-        $this->parameters = array_merge($this->parameters,$parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
 
         $this->checkParameters($this->parameters);
 
@@ -45,8 +47,8 @@ class MockerGateway implements PaymentGatewayInterface {
     {
 
         Log::info('Indipay Payment Request Initiated: ');
-        return View::make('indipay::mocker')->with('data',$this->parameters)
-                                            ->with('end_point',$this->getEndPoint());
+        return View::make('indipay::mocker')->with('data', $this->parameters)
+            ->with('end_point', $this->getEndPoint());
 
     }
 
@@ -59,7 +61,7 @@ class MockerGateway implements PaymentGatewayInterface {
     public function response($request)
     {
         $params = $request->all();
-        if($params['transaction_status'] == 'success'){
+        if ($params['transaction_status'] == 'success') {
             $params['status'] = 'success';
             return $params;
         }
@@ -74,9 +76,9 @@ class MockerGateway implements PaymentGatewayInterface {
      */
     public function verify($parameters)
     {
-        if(!isset($parameters['transaction_no']) || !isset($parameters['amount'])){
+        if (!isset($parameters['transaction_no']) || !isset($parameters['amount'])) {
             throw new IndipayParametersMissingException;
-        } 
+        }
         $client = new \GuzzleHttp\Client();
         $res = $client->request('GET', $this->statusEndPoint, [
             'query' => [
@@ -85,7 +87,7 @@ class MockerGateway implements PaymentGatewayInterface {
             ]
         ]);
         $mocker_data = json_decode($res->getBody());
-        if($mocker_data->amount == $parameters['amount']){
+        if ($mocker_data->amount == $parameters['amount']) {
             $mocker_data['status'] = 'success';
             return $mocker_data;
         }
@@ -100,19 +102,19 @@ class MockerGateway implements PaymentGatewayInterface {
      */
     public function checkParameters($parameters)
     {
-        if($this->service == 'default') {
+        if ($this->service == 'default') {
             $validator = Validator::make($parameters, [
                 'transaction_no' => 'required',
                 'redirect_url' => 'required|url',
                 'amount' => 'required|numeric',
             ]);
-            
-        }elseif($this->service == 'instamojo'){
+
+        } elseif ($this->service == 'instamojo') {
             $validator = Validator::make($parameters, [
                 'amount' => 'required|numeric|between:9,200000',
                 'redirect_url' => 'required|url',
             ]);
-        }elseif($this->service == 'ccavenue'){
+        } elseif ($this->service == 'ccavenue') {
             $validator = Validator::make($parameters, [
                 'amount' => 'required|numeric|between:9,200000',
                 'redirect_url' => 'required|url',

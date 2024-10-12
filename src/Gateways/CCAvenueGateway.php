@@ -1,12 +1,14 @@
-<?php namespace Softon\Indipay\Gateways;
+<?php
+namespace Abounaja\Indipay\Gateways;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Softon\Indipay\Exceptions\IndipayParametersMissingException;
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
-class CCAvenueGateway implements PaymentGatewayInterface {
+class CCAvenueGateway implements PaymentGatewayInterface
+{
 
     protected $parameters = array();
     protected $merchantData = '';
@@ -32,20 +34,20 @@ class CCAvenueGateway implements PaymentGatewayInterface {
 
     public function getEndPoint()
     {
-        return $this->testMode?$this->testEndPoint:$this->liveEndPoint;
+        return $this->testMode ? $this->testEndPoint : $this->liveEndPoint;
     }
 
     public function request($parameters)
     {
-        $this->parameters = array_merge($this->parameters,$parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
 
         $this->checkParameters($this->parameters);
 
-        foreach($this->parameters as $key=>$value) {
-            $this->merchantData .= $key.'='.$value.'&';
+        foreach ($this->parameters as $key => $value) {
+            $this->merchantData .= $key . '=' . $value . '&';
         }
 
-        $this->encRequest = $this->encrypt($this->merchantData,$this->workingKey);
+        $this->encRequest = $this->encrypt($this->merchantData, $this->workingKey);
 
         return $this;
 
@@ -58,9 +60,9 @@ class CCAvenueGateway implements PaymentGatewayInterface {
     {
 
         Log::info('Indipay Payment Request Initiated: ');
-        return View::make('indipay::ccavenue')->with('encRequest',$this->encRequest)
-                             ->with('accessCode',$this->accessCode)
-                             ->with('endPoint',$this->getEndPoint());
+        return View::make('indipay::ccavenue')->with('encRequest', $this->encRequest)
+            ->with('accessCode', $this->accessCode)
+            ->with('endPoint', $this->getEndPoint());
 
     }
 
@@ -74,7 +76,7 @@ class CCAvenueGateway implements PaymentGatewayInterface {
     {
         $encResponse = $request->encResp;
 
-        $rcvdString = $this->decrypt($encResponse,$this->workingKey);
+        $rcvdString = $this->decrypt($encResponse, $this->workingKey);
         parse_str($rcvdString, $decResponse);
 
         return $decResponse;
@@ -102,8 +104,8 @@ class CCAvenueGateway implements PaymentGatewayInterface {
         }
 
     }
-    
-     /**
+
+    /**
      * CCAvenue encryption
      * @param $plainText string
      * @param $key string
@@ -117,7 +119,7 @@ class CCAvenueGateway implements PaymentGatewayInterface {
         $encryptedText = bin2hex($openMode);
         return $encryptedText;
     }
-    
+
 
     /**
      * CCAvenue decryption
@@ -133,7 +135,7 @@ class CCAvenueGateway implements PaymentGatewayInterface {
         $decryptedText = openssl_decrypt($encryptedText, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $initVector);
         return $decryptedText;
     }
-  
+
 
 
     /**
@@ -155,23 +157,18 @@ class CCAvenueGateway implements PaymentGatewayInterface {
     protected function hextobin($hexString)
     {
         $length = strlen($hexString);
-        $binString="";
-        $count=0;
-        while($count<$length)
-        {
-            $subString =substr($hexString,$count,2);
-            $packedString = pack("H*",$subString);
-            if ($count==0)
-            {
-                $binString=$packedString;
+        $binString = "";
+        $count = 0;
+        while ($count < $length) {
+            $subString = substr($hexString, $count, 2);
+            $packedString = pack("H*", $subString);
+            if ($count == 0) {
+                $binString = $packedString;
+            } else {
+                $binString .= $packedString;
             }
 
-            else
-            {
-                $binString.=$packedString;
-            }
-
-            $count+=2;
+            $count += 2;
         }
         return $binString;
     }

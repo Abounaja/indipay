@@ -1,4 +1,5 @@
-<?php namespace Softon\Indipay\Exceptions;
+<?php
+namespace Abounaja\Indipay\Exceptions;
 
 /**
  * Invalid Request Exception

@@ -1,12 +1,14 @@
-<?php namespace Softon\Indipay\Gateways;
+<?php
+namespace Abounaja\Indipay\Gateways;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
-use Softon\Indipay\Exceptions\IndipayParametersMissingException;
+use Abounaja\Indipay\Exceptions\IndipayParametersMissingException;
 
-class EBSGateway implements PaymentGatewayInterface {
+class EBSGateway implements PaymentGatewayInterface
+{
 
     protected $parameters = array();
     protected $testMode = false;
@@ -26,7 +28,7 @@ class EBSGateway implements PaymentGatewayInterface {
         $this->parameters['reference_no'] = $this->generateTransactionID();
         $this->parameters['currency'] = 'INR';
         $this->parameters['mode'] = 'LIVE';
-        if($this->testMode){
+        if ($this->testMode) {
             $this->parameters['mode'] = 'TEST';
         }
         $this->parameters['return_url'] = url(Config::get('indipay.ebs.return_url'));
@@ -41,7 +43,7 @@ class EBSGateway implements PaymentGatewayInterface {
 
     public function request($parameters)
     {
-        $this->parameters = array_merge($this->parameters,$parameters);
+        $this->parameters = array_merge($this->parameters, $parameters);
 
         $this->checkParameters($this->parameters);
 
@@ -58,9 +60,9 @@ class EBSGateway implements PaymentGatewayInterface {
     {
 
         Log::info('Indipay Payment Request Initiated: ');
-        return View::make('indipay::ebs')->with('hash',$this->hash)
-                             ->with('parameters',$this->parameters)
-                             ->with('endPoint',$this->getEndPoint());
+        return View::make('indipay::ebs')->with('hash', $this->hash)
+            ->with('parameters', $this->parameters)
+            ->with('endPoint', $this->getEndPoint());
 
     }
 
@@ -115,7 +117,7 @@ class EBSGateway implements PaymentGatewayInterface {
     protected function encrypt()
     {
         $this->hash = '';
-        $hash_string = $this->secretKey."|".urlencode($this->parameters['account_id'])."|".urlencode($this->parameters['amount'])."|".urlencode($this->parameters['reference_no'])."|".$this->parameters['return_url']."|".urlencode($this->parameters['mode']);
+        $hash_string = $this->secretKey . "|" . urlencode($this->parameters['account_id']) . "|" . urlencode($this->parameters['amount']) . "|" . urlencode($this->parameters['reference_no']) . "|" . $this->parameters['return_url'] . "|" . urlencode($this->parameters['mode']);
         $this->hash = md5($hash_string);
     }
 
