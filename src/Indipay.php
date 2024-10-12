@@ -1,27 +1,26 @@
-<?php namespace Softon\Indipay;
+<?php
 
-use Softon\Indipay\Gateways\CCAvenueGateway;
-use Softon\Indipay\Gateways\CitrusGateway;
-use Softon\Indipay\Gateways\EBSGateway;
-use Softon\Indipay\Gateways\InstaMojoGateway;
-use Softon\Indipay\Gateways\PaymentGatewayInterface;
-use Softon\Indipay\Gateways\PayUMoneyGateway;
-use Softon\Indipay\Gateways\MockerGateway;
-use Softon\Indipay\Gateways\ZapakPayGateway;
+namespace Abounaja\Indipay;
 
-class Indipay {
+use Abounaja\Indipay\Gateways\CCAvenueGateway;
+use Abounaja\Indipay\Gateways\CitrusGateway;
+use Abounaja\Indipay\Gateways\EBSGateway;
+use Abounaja\Indipay\Gateways\InstaMojoGateway;
+use Abounaja\Indipay\Gateways\MockerGateway;
+use Abounaja\Indipay\Gateways\PaymentGatewayInterface;
+use Abounaja\Indipay\Gateways\PayUMoneyGateway;
+use Abounaja\Indipay\Gateways\ZapakPayGateway;
 
+class Indipay
+{
     protected $gateway;
 
-    /**
-     * @param PaymentGatewayInterface $gateway
-     */
-    function __construct(PaymentGatewayInterface $gateway)
+    public function __construct(PaymentGatewayInterface $gateway)
     {
         $this->gateway = $gateway;
     }
 
-    public function purchase($parameters = array())
+    public function purchase($parameters = [])
     {
 
         return $this->gateway->request($parameters)->send();
@@ -33,12 +32,12 @@ class Indipay {
         return $this->gateway->response($request);
     }
 
-    public function prepare($parameters = array())
+    public function prepare($parameters = [])
     {
         return $this->gateway->request($parameters);
     }
 
-    public function verify($parameters = array())
+    public function verify($parameters = [])
     {
         return $this->gateway->verify($parameters);
     }
@@ -51,41 +50,37 @@ class Indipay {
     public function gateway($name)
     {
         $name = strtolower($name);
-        switch($name)
-        {
+        switch ($name) {
             case 'ccavenue':
-                $this->gateway = new CCAvenueGateway();
+                $this->gateway = new CCAvenueGateway;
                 break;
 
             case 'payumoney':
-                $this->gateway = new PayUMoneyGateway();
+                $this->gateway = new PayUMoneyGateway;
                 break;
 
             case 'ebs':
-                $this->gateway = new EBSGateway();
+                $this->gateway = new EBSGateway;
                 break;
 
             case 'citrus':
-                $this->gateway = new CitrusGateway();
+                $this->gateway = new CitrusGateway;
                 break;
 
             case 'instamojo':
-                $this->gateway = new InstaMojoGateway();
+                $this->gateway = new InstaMojoGateway;
                 break;
 
             case 'mocker':
-                $this->gateway = new MockerGateway();
+                $this->gateway = new MockerGateway;
                 break;
 
             case 'zapakpay':
-                $this->gateway = new ZapakPayGateway();
+                $this->gateway = new ZapakPayGateway;
                 break;
 
         }
 
         return $this;
     }
-
-
-
 }

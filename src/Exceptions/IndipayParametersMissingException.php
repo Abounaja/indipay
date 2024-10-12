@@ -1,4 +1,6 @@
-<?php namespace Softon\Indipay\Exceptions;
+<?php
+
+namespace Abounaja\Indipay\Exceptions;
 
 /**
  * Invalid Request Exception
@@ -10,8 +12,7 @@ class IndipayParametersMissingException extends \Exception
     /**
      * Render the exception into an HTTP response.
      *
-     * @param  \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return string
      */
     public function render($request)
